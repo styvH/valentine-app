@@ -20,17 +20,18 @@ app.use(express.json());
 
 // Endpoint pour générer un lien
 app.post("/generate", async (req, res) => {
-const { destinataire, message_perso } = req.body;
-if (!destinataire || !message_perso) {
+const { destinataire, message_perso, message_secret } = req.body;
+if (!destinataire || !message_perso || !message_secret) {
     return res.status(400).json({ error: "Champs requis manquants." });
 }
 
 const endpoint = uuidv4(); // Génère un identifiant unique
-const data = JSON.stringify({ destinataire, message_perso });
+const data = JSON.stringify({ destinataire, message_perso, message_secret });
 console.log("data : ", data);
 await client.setEx(endpoint, 86400, data); // Expire en 24h
+console.log(`http://localhost:5173/${endpoint}`);
+res.json({ endpoint });
 
-res.json({ link: `${req.protocol}://${req.get("host")}/${endpoint}` });
 });
 
 // Endpoint pour récupérer le message
