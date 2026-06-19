@@ -1,1 +1,119 @@
 @import "tailwindcss";
+
+:root {
+  --font-body: "Poppins", system-ui, sans-serif;
+  --font-script: "Dancing Script", cursive;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-script {
+  font-family: var(--font-script);
+}
+
+/* Animated romantic gradient backdrop */
+.bg-romance {
+  background: linear-gradient(-45deg, #ffd1e8, #ffb6c8, #ff8fab, #ffc3a0, #ffd6e0);
+  background-size: 400% 400%;
+  animation: gradientShift 16s ease infinite;
+}
+
+.bg-romance-deep {
+  background: linear-gradient(-45deg, #ff6b9d, #ff8fab, #ff5e7e, #ff9a8b, #ff6f91);
+  background-size: 400% 400%;
+  animation: gradientShift 14s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Soft glass card */
+.glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 50px -12px rgba(214, 51, 108, 0.35);
+}
+
+/* Decorative blurred blobs */
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(60px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Shimmering button sheen */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 75%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: sheen 3.2s ease-in-out infinite;
+}
+@keyframes sheen {
+  0% {
+    left: -150%;
+  }
+  60%,
+  100% {
+    left: 150%;
+  }
+}
+
+/* Custom input styling */
+.romance-input {
+  width: 100%;
+  border-radius: 1rem;
+  border: 1.5px solid rgba(255, 143, 171, 0.4);
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0.85rem 1.1rem;
+  font-size: 1rem;
+  color: #5b2333;
+  transition: all 0.25s ease;
+  outline: none;
+}
+.romance-input::placeholder {
+  color: #c98aa0;
+}
+.romance-input:focus {
+  border-color: #ff5e7e;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 94, 126, 0.15);
+  transform: translateY(-1px);
+}

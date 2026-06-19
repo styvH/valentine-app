@@ -10,11 +10,39 @@ const PORT = process.env.PORT || 3000;
 // Enable CORS for all origins (or specify allowed origins)
 app.use(cors());
 
-// Connexion à Redis
-const client = redis.createClient({
-url: process.env.REDIS_URL || "redis://localhost:6379"
+// Store en mémoire utilisé en fallback si Redis est indisponible
+function createMemoryStore() {
+  const store = new Map();
+  return {
+    async setEx(key, ttlSeconds, value) {
+      store.set(key, value);
+      setTimeout(() => store.delete(key), ttlSeconds * 1000).unref?.();
+    },
+    async get(key) {
+      return store.has(key) ? store.get(key) : null;
+    },
+  };
+}
+
+// Connexion à Redis, avec fallback en mémoire si la connexion échoue
+let client = redis.createClient({
+  url: process.env.REDIS_URL || "redis://localhost:6379",
+  socket: {
+    connectTimeout: 2000,
+    reconnectStrategy: false, // échoue immédiatement au lieu de retenter indéfiniment
+  },
 });
-client.connect();
+client.on("error", () => {}); // évite le crash sur erreur de socket
+
+(async () => {
+  try {
+    await client.connect();
+    console.log("✅ Connecté à Redis");
+  } catch {
+    console.warn("⚠️  Redis indisponible — utilisation d'un store en mémoire (données non persistantes).");
+    client = createMemoryStore();
+  }
+})();
 
 app.use(express.json());
 
