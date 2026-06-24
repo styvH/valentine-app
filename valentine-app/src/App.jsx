@@ -5,10 +5,26 @@ import {
   Route,
   Routes,
   Link,
-  useParams,
 } from "react-router-dom";
 
-const API = "http://localhost:3000";
+/* ------------------------------------------------------------------ */
+/*  Zéro stockage : le message est encodé dans le lien lui-même.       */
+/*  On le place après le « # » → le fragment n'est jamais envoyé au    */
+/*  serveur, donc aucune donnée ne quitte le navigateur.              */
+/* ------------------------------------------------------------------ */
+function encodePayload(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function decodePayload(token) {
+  const b64 = token.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
 
 /* ------------------------------------------------------------------ */
 /*  Decorative shared pieces                                          */
@@ -126,14 +142,117 @@ function HeartBurst() {
 /*  Pages                                                             */
 /* ------------------------------------------------------------------ */
 
+// Mentions légales / RGPD : liens discrets en bas de page + modale détaillée
+function LegalFooter() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <span className="pointer-events-none fixed bottom-3 left-4 z-40 select-none text-[11px] font-light text-rose-900/40">
+        © 2026 SHAU · Styvan Hauterville
+      </span>
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-3 right-4 z-40 text-[11px] font-light text-rose-900/40 underline-offset-2 transition-colors hover:text-rose-900/70 hover:underline"
+      >
+        CGU · Confidentialité
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-rose-900/40 px-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOpen(false)}
+          >
+            <motion.div
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 260, damping: 24 }}
+              className="glass max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-[1.75rem] p-7 text-left text-rose-900/80"
+            >
+              <div className="mb-2 flex items-center justify-between gap-4">
+                <h3 className="font-script text-3xl font-bold text-rose-600">
+                  Mentions &amp; confidentialité
+                </h3>
+                <button
+                  onClick={() => setOpen(false)}
+                  aria-label="Fermer"
+                  className="shrink-0 rounded-full bg-white/70 px-3 py-1 text-sm font-semibold text-rose-600 shadow"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <h4 className="mt-4 mb-1 text-sm font-semibold text-rose-700">
+                🔒 Confidentialité (RGPD)
+              </h4>
+              <ul className="list-disc space-y-1 pl-5 text-sm">
+                <li>Aucun compte, aucune inscription, aucun cookie de suivi ni outil d’analyse.</li>
+                <li>
+                  <strong>Aucune donnée n’est stockée</strong> : votre message est encodé
+                  directement dans le lien généré. Il n’existe ni base de données ni serveur
+                  qui le conserve.
+                </li>
+                <li>
+                  Le contenu placé après le « # » du lien n’est même{" "}
+                  <strong>jamais transmis au serveur</strong> : seul le navigateur du
+                  destinataire le lit et le déchiffre.
+                </li>
+                <li>Aucune donnée n’est revendue, partagée avec des tiers ou exploitée à des fins commerciales.</li>
+                <li>
+                  Comme tout est contenu dans le lien, quiconque possède ce lien peut lire le
+                  message : ne le partagez qu’avec la personne concernée.
+                </li>
+              </ul>
+
+              <h4 className="mt-4 mb-1 text-sm font-semibold text-rose-700">
+                📜 Conditions d’utilisation
+              </h4>
+              <ul className="list-disc space-y-1 pl-5 text-sm">
+                <li>Service gratuit, proposé à titre ludique, sans garantie de disponibilité.</li>
+                <li>
+                  Vous êtes seul responsable du contenu que vous rédigez et partagez ; n’y
+                  insérez aucune donnée sensible ou confidentielle.
+                </li>
+                <li>Le service peut être modifié, suspendu ou interrompu à tout moment.</li>
+              </ul>
+
+              <h4 className="mt-4 mb-1 text-sm font-semibold text-rose-700">
+                ✉️ Contact &amp; droits
+              </h4>
+              <p className="text-sm">
+                Aucune donnée personnelle n’étant collectée ni conservée, il n’existe aucun
+                profil à consulter, exporter ou supprimer. Pour toute question :{" "}
+                <a href="mailto:hello@shau.fr" className="font-semibold text-rose-600 underline">
+                  hello@shau.fr
+                </a>
+                .
+              </p>
+
+              <p className="mt-5 text-center text-[11px] text-rose-900/40">
+                © 2026 SHAU · Styvan Hauterville — Tous droits réservés.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<CreateMessage />} />
-        <Route path="/:endpoint" element={<ValentineMessage />} />
+        <Route path="/v" element={<ValentineMessage />} />
       </Routes>
+      <LegalFooter />
     </Router>
   );
 }
@@ -193,7 +312,7 @@ function CreateMessage() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(null);
 
-  const generateLink = async () => {
+  const generateLink = () => {
     setError(null);
     if (!destinataire.trim() || !message.trim() || !secret.trim()) {
       setError("Remplis tous les champs pour créer ton message 💕");
@@ -201,24 +320,15 @@ function CreateMessage() {
     }
     setLoading(true);
     try {
-      const response = await fetch(`${API}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          destinataire,
-          message_perso: message,
-          message_secret: secret,
-        }),
+      const token = encodePayload({
+        destinataire,
+        message_perso: message,
+        message_secret: secret,
       });
-      const data = await response.json();
-      if (data.endpoint) {
-        setGeneratedLink(`http://localhost:5173/${data.endpoint}`);
-        setShowModal(true);
-      } else {
-        setError("Une erreur est survenue. Réessaie.");
-      }
+      setGeneratedLink(`${window.location.origin}/v#${token}`);
+      setShowModal(true);
     } catch {
-      setError("Impossible de joindre le serveur. Est-il bien lancé ?");
+      setError("Une erreur est survenue. Réessaie.");
     } finally {
       setLoading(false);
     }
@@ -394,7 +504,6 @@ function CreateMessage() {
 }
 
 function ValentineMessage() {
-  const { endpoint } = useParams();
   const [messageData, setMessageData] = useState(null);
   const [error, setError] = useState(null);
   const [accepted, setAccepted] = useState(false);
@@ -402,17 +511,16 @@ function ValentineMessage() {
   const [noScale, setNoScale] = useState(1);
 
   useEffect(() => {
-    const fetchMessage = async () => {
-      try {
-        const response = await fetch(`${API}/${endpoint}`);
-        if (!response.ok) throw new Error("Lien expiré ou introuvable 💔");
-        setMessageData(await response.json());
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-    fetchMessage();
-  }, [endpoint]);
+    try {
+      const token = window.location.hash.replace(/^#/, "");
+      if (!token) throw new Error("Lien invalide ou incomplet 💔");
+      const data = decodePayload(token);
+      if (!data || !data.destinataire) throw new Error("Lien invalide ou incomplet 💔");
+      setMessageData(data);
+    } catch {
+      setError("Lien invalide ou incomplet 💔");
+    }
+  }, []);
 
   const dodge = () => {
     setNoPosition({
